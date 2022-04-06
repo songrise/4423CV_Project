@@ -14,22 +14,24 @@ import os
 import cv2
 import sklearn as sk
 from sklearn.model_selection import train_test_split
-#%% Constants Definition
+# %% Constants Definition
 BASE_DIR = "./dataset/"
 EXAMPLE_ID = 42
 RND_SEED = 42
 VAL_SIZE = 0.2
-
-#%% Task 1 of the basic task
+TEST_START = 9000
+LABEL = {'id_1': 0, 'font_1': 1, 'c_1': 2, 'r_1': 3,
+         'id_2': 4, 'font_2': 5, 'c_2': 6, 'r_2': 7}
+# %% Task 1 of the basic task
 # load image
 
 # load all image with label
 label_csv = np.loadtxt(BASE_DIR+"/label.csv", dtype=str,
                        delimiter=",", skiprows=1)
 
-idx = label_csv[:,0]
-labels = label_csv[:,1:]
-labels = np.array(labels, dtype=np.uint32)
+idx = label_csv[:, 0]
+labels = label_csv[:, 1:]
+labels = np.array(labels, dtype=np.int32)
 # load all image and convert to numpy array
 images = []
 for img_name in idx:
@@ -43,13 +45,43 @@ all_labels = labels
 # show an example
 example_img = all_img[EXAMPLE_ID]
 plt.title("Task 1: Example Image")
-plt.imshow(example_img,cmap='gray')
+plt.imshow(example_img, cmap='gray')
 plt.show()
 
 
 # %% task 2 of the basic task, train/test/val split
-train_X, val_X, train_Y, val_Y = train_test_split(all_img, all_labels, test_size=VAL_SIZE, random_state=RND_SEED)
+# task 2 of the basic task, train/test/val split
+# extract test set first
+test_X = all_img[TEST_START:]
+test_Y = all_labels[TEST_START:]
+all_img = all_img[:TEST_START]
+all_labels = all_labels[:TEST_START]
+# split train/val set
+train_X, val_X, train_Y, val_Y = train_test_split(
+    all_img, all_labels, test_size=VAL_SIZE, random_state=RND_SEED)
 print("Task 2: Train/Val split")
 print("Train size:", train_X.shape[0])
 print("Val size:", val_X.shape[0])
+
+
+# %%baseline of Task 3
+# Task 3: baseline of Task 3
+# First, extract the labels for all dataset
+# we only need the two id for the basic task
+def extract_char_ids(labels):
+    """
+    Input: Ndarray of shape (N, 8), all labels
+    Output: Ndarray of shape (N, 2), only id_1 and id_2
+    """
+    id_1 = labels[:, LABEL['id_1']]
+    id_2 = labels[:, LABEL['id_2']]
+    id_1 = np.reshape(id_1, (-1, 1))
+    id_2 = np.reshape(id_2, (-1, 1))
+    label = np.concatenate((id_1, id_2), axis=1)
+    return label
+
+
+train_Y, val_Y, test_Y = extract_char_ids(
+    train_Y), extract_char_ids(val_Y), extract_char_ids(test_Y)
+
 # %%
