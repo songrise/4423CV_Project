@@ -14,12 +14,15 @@ import os
 import cv2
 import sklearn as sk
 from sklearn.model_selection import train_test_split
+import keras
 # %% Constants Definition
 BASE_DIR = "./dataset/"
+IMG_H = IMG_W = 128
 EXAMPLE_ID = 42
 RND_SEED = 42
 VAL_SIZE = 0.2
 TEST_START = 9000
+N_CHAR = 499  # max id of characters
 LABEL = {'id_1': 0, 'font_1': 1, 'c_1': 2, 'r_1': 3,
          'id_2': 4, 'font_2': 5, 'c_2': 6, 'r_2': 7}
 # %% Task 1 of the basic task
@@ -84,4 +87,48 @@ def extract_char_ids(labels):
 train_Y, val_Y, test_Y = extract_char_ids(
     train_Y), extract_char_ids(val_Y), extract_char_ids(test_Y)
 
-# %%
+
+def one_hot_encode(labels):
+    """
+    One hot encoding for classification
+    Input: Ndarray [N, 2]
+    Output Ndarray [N, 2, N_CHAR]
+    """
+    n_type = N_CHAR+1
+    labels = np.reshape(labels, (-1, 2))
+    one_hot = np.zeros((labels.shape[0], labels.shape[1], n_type))
+    for i in range(labels.shape[0]):
+        for j in range(labels.shape[1]):
+            one_hot[i, j, labels[i, j]] = 1
+    return one_hot
+
+# feature engineering on the input image
+# todo: find convex hull
+# spilt the image into 4 parts and stack them
+
+
+def split_img(imgs):
+    """
+    Split an image into 4 parts
+    Input: Ndarray of shape (N, H, W), all images
+    Output: Ndarray of shape (N, H/2, W/2, 4), split images
+    """
+    imgs = np.reshape(imgs, (-1, IMG_H, IMG_W, 1))
+    upper_left = imgs[:, :IMG_H//2, :IMG_W//2, :]
+    upper_right = imgs[:, :IMG_H//2, IMG_W//2:, :]
+    lower_left = imgs[:, IMG_H//2:, :IMG_W//2, :]
+    lower_right = imgs[:, IMG_H//2:, IMG_W//2:, :]
+    imgs_split = np.concatenate(
+        (upper_left, upper_right, lower_left, lower_right), axis=3)
+    return imgs_split
+
+
+train_X, val_X, val_Y = split_img(train_X), split_img(val_X), split_img(val_Y)
+# todo visualization the split image
+# plt.imshow(train_X[0, :, :, 1], cmap='gray')
+# %% Task 3 Cont. Define Classifier
+# define the classifier
+
+
+def get_model():
+    model = keras.Sequential()
